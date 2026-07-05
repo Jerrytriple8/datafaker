@@ -91,15 +91,19 @@ def format_output(results, output_format):
                 print(r)
 
 
+def _add_common_flags(parser):
+    """Add --count and --output flags to a subparser."""
+    parser.add_argument("--count", "-n", type=int, default=1,
+                        help="Number of items to generate (default: 1)")
+    parser.add_argument("--output", "-o", choices=["text", "json", "csv", "table"],
+                        default="text", help="Output format (default: text)")
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="datafaker",
         description="Generate fake data for testing and prototyping.",
     )
-    parser.add_argument("--count", "-n", type=int, default=1,
-                        help="Number of items to generate (default: 1)")
-    parser.add_argument("--output", "-o", choices=["text", "json", "csv", "table"],
-                        default="text", help="Output format (default: text)")
 
     sub = parser.add_subparsers(dest="command", help="Data type to generate")
 
@@ -107,28 +111,35 @@ def main():
     p_name = sub.add_parser("name", help="Generate names")
     p_name.add_argument("--format", "-f", choices=["full", "first", "last"],
                         default="full", help="Name format")
+    _add_common_flags(p_name)
 
     # email
     p_email = sub.add_parser("email", help="Generate emails")
     p_email.add_argument("--domain", "-d", default=None,
                          help="Email domain (random if not set)")
+    _add_common_flags(p_email)
 
     # phone
-    sub.add_parser("phone", help="Generate phone numbers")
+    p_phone = sub.add_parser("phone", help="Generate phone numbers")
+    _add_common_flags(p_phone)
 
     # address
-    sub.add_parser("address", help="Generate addresses")
+    p_addr = sub.add_parser("address", help="Generate addresses")
+    _add_common_flags(p_addr)
 
     # uuid
     p_uuid = sub.add_parser("uuid", help="Generate UUIDs")
     p_uuid.add_argument("--version", "-v", type=int, choices=[1, 4],
                         default=4, help="UUID version (default: 4)")
+    _add_common_flags(p_uuid)
 
     # ipv4
-    sub.add_parser("ipv4", help="Generate IPv4 addresses")
+    p4 = sub.add_parser("ipv4", help="Generate IPv4 addresses")
+    _add_common_flags(p4)
 
     # ipv6
-    sub.add_parser("ipv6", help="Generate IPv6 addresses")
+    p6 = sub.add_parser("ipv6", help="Generate IPv6 addresses")
+    _add_common_flags(p6)
 
     # date
     p_date = sub.add_parser("date", help="Generate dates")
@@ -136,18 +147,27 @@ def main():
                         help="Start date (YYYY-MM-DD, default: 2000-01-01)")
     p_date.add_argument("--end", "-e", default=None,
                         help="End date (YYYY-MM-DD, default: today)")
+    _add_common_flags(p_date)
 
     # integer
     p_int = sub.add_parser("integer", help="Generate integers")
     p_int.add_argument("--low", type=int, default=0, help="Minimum (default: 0)")
     p_int.add_argument("--high", type=int, default=10000, help="Maximum (default: 10000)")
+    _add_common_flags(p_int)
 
     # record
     p_rec = sub.add_parser("record", help="Generate mixed records (JSON)")
     p_rec.add_argument("--fields", "-f", default="name,email,phone,address",
                        help="Comma-separated field names (default: name,email,phone,address)")
+    _add_common_flags(p_rec)
 
     args = parser.parse_args()
+
+    # Set defaults for count/output when called without subcommand
+    if not hasattr(args, "count") or args.count is None:
+        args.count = 1
+    if not hasattr(args, "output") or args.output is None:
+        args.output = "text"
 
     if not args.command:
         parser.print_help()
